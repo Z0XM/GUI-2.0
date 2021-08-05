@@ -12,10 +12,11 @@ namespace gui {
 		sf::Vector2f maxSize;
 		sf::FloatRect activeRegion;
 
-		bool isActive;
 		std::map<unsigned int, Entity*> entityMap;
 
 		Scroll* connectedScroll[4];
+
+		sf::Color fillColor, outlineColor;
 
 		void limitActiveRegion();
 	public:
@@ -31,6 +32,9 @@ namespace gui {
 		std::string getName(unsigned int id);
 
 		sf::Vector2f getMousePosition() const;
+
+		void setFillColor(sf::Color color);
+		void setOutineColor(sf::Color color);
 
 		void setScroll(int scrollPos);
 		void removeScroll(int scrollPos);
@@ -52,11 +56,10 @@ namespace gui {
 
 		Entity* isHit(const sf::Vector2f& mousePos);
 
-		void setActive();
-		void setInactive();
-
 		virtual void activateSelection() override;
 		virtual void deactivateSelection() override;
+
+		void setAction(std::function<void()> func) = delete;
 
 		void draw(sf::RenderTarget&);
 

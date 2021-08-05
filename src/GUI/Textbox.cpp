@@ -21,6 +21,14 @@ namespace gui {
 
 	}
 
+	void Textbox::copy(Textbox& textbox)
+	{
+		box = textbox.box;
+		text = textbox.text;
+		hasText = textbox.hasText;
+		alignment = textbox.alignment;
+	}
+
 	void Textbox::updateText()
 	{
 		if (hasText) {
@@ -207,8 +215,10 @@ namespace gui {
 	}
 	void Textbox::draw(sf::RenderTarget& target)
 	{
-		target.draw(box);
-		target.draw(text);
+		if (isActive()) {
+			target.draw(box);
+			target.draw(text);
+		}
 	}
 	void Textbox::activateSelection()
 	{

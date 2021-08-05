@@ -10,12 +10,16 @@ namespace gui {
 		sf::RectangleShape bar;
 		sf::Color barColor, barHighlight;
 		float offset;
-		
+
 		void updateBar();
 	public:
 		Slider(const sf::Vector2f& size = sf::Vector2f(0, 0));
 		~Slider();
 
+		void copy(const Slider& slider);
+
+		void setHigh();
+		void setLow();
 		float getMappedOffset()const;
 
 		void setBarFillColor(sf::Color color);
@@ -34,7 +38,7 @@ namespace gui {
 
 		void activateSelection() override;
 		void deactivateSelection() override;
-
+		
 		void draw(sf::RenderTarget& target) override;
 	};
 }

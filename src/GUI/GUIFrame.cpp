@@ -10,6 +10,8 @@ namespace gui {
 		isSelected = false;
 		action = nullptr;
 		actionEvent = ActionEvent::PRESS;
+
+		setActive();
 	}
 	Entity::~Entity()
 	{
@@ -24,6 +26,34 @@ namespace gui {
 	const Frame* Entity::getFrame() const
 	{
 		return currFrame;
+	}
+
+	void Entity::setActive()
+	{
+		active = true;
+	}
+	void Entity::setInactive()
+	{
+		active = false;
+	}
+	bool Entity::isActive()
+	{
+		return active;
+	}
+
+	void Entity::callAction() const
+	{
+		action();
+	}
+
+	bool Entity::hasAction() const
+	{
+		return action != nullptr;
+	}
+
+	void Entity::setAction(std::function<void()> func)
+	{
+		action = func;
 	}
 
 	std::map<std::string, unsigned int> Frame::nameMap;
@@ -96,8 +126,8 @@ namespace gui {
 	}
 	void Frame::update()
 	{
-		if (clicked != nullptr && clicked->actionEvent == Entity::ActionEvent::MOVE && clicked->action != nullptr) {
-			clicked->action();
+		if (clicked != nullptr && clicked->actionEvent == Entity::ActionEvent::MOVE && clicked->hasAction()) {
+			clicked->callAction();
 		}
 		else {
 			Entity* currentMouseHoveringOn = nullptr;
@@ -118,14 +148,14 @@ namespace gui {
 		if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == sf::Mouse::Left) {
 			clicked = mouseHoveringOn;
 
-			if (clicked != nullptr && clicked->actionEvent == Entity::ActionEvent::PRESS && clicked->action != nullptr)
-				clicked->action();
+			if (clicked != nullptr && clicked->actionEvent == Entity::ActionEvent::PRESS && clicked->hasAction())
+				clicked->callAction();
 		}
 		else if(e.type == sf::Event::MouseButtonReleased) {
 			if (clicked != nullptr && clicked == mouseHoveringOn && e.mouseButton.button == sf::Mouse::Left)
 			{
-				if (clicked->actionEvent == Entity::ActionEvent::RELEASE && clicked->action != nullptr)
-					clicked->action();
+				if (clicked->actionEvent == Entity::ActionEvent::RELEASE && clicked->hasAction())
+					clicked->callAction();
 			}
 			clicked = nullptr;
 		}

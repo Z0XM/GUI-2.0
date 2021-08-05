@@ -21,6 +21,28 @@ gui::Slider::~Slider()
 {
 }
 
+void gui::Slider::copy(const Slider& slider)
+{
+	bar = slider.bar;
+	barColor = slider.barColor;
+	barHighlight = slider.barHighlight;
+
+	box = slider.box;
+	text = slider.text;
+	hasText = slider.hasText;
+	alignment = slider.alignment;
+}
+
+void gui::Slider::setHigh()
+{
+	bar.setPosition(box.getPosition().x + box.getSize().x - bar.getSize().x, bar.getPosition().y);
+}
+
+void gui::Slider::setLow()
+{
+	bar.setPosition(box.getPosition().x, bar.getPosition().y);
+}
+
 float gui::Slider::getMappedOffset() const 
 {
 	return offset / (box.getSize().x - bar.getSize().x);
@@ -86,7 +108,10 @@ void gui::Slider::move(const sf::Vector2f& offset)
 
 gui::Entity* gui::Slider::isHit(const sf::Vector2f& mousePos)
 {
-	return box.getGlobalBounds().contains(mousePos) ? this : nullptr;
+	if (isActive()) {
+		return box.getGlobalBounds().contains(mousePos) ? this : nullptr;
+	}
+	return nullptr;
 }
 
 void gui::Slider::reset()
@@ -119,23 +144,26 @@ void gui::Slider::deactivateSelection()
 	bar.setFillColor(barColor);
 }
 
+
 void gui::Slider::draw(sf::RenderTarget& target)
 {
-	float halfWidth = 1.5f;
-	sf::Vertex midLine[4] = {
-		{{box.getPosition().x, bar.getPosition().y - halfWidth}, sf::Color::Green},
-		{{box.getPosition().x + box.getSize().x * 0.6f, bar.getPosition().y - halfWidth}, sf::Color::Yellow },
-		{{box.getPosition().x + box.getSize().x * 0.6f, bar.getPosition().y + halfWidth}, sf::Color::Yellow },
-		{{box.getPosition().x, bar.getPosition().y + halfWidth}, sf::Color::Green}
-	};
-	target.draw(midLine, 4, sf::Quads);
+	if (isActive()) {
+		float halfWidth = 1.5f;
+		sf::Vertex midLine[4] = {
+			{{box.getPosition().x, bar.getPosition().y - halfWidth}, sf::Color::Green},
+			{{box.getPosition().x + box.getSize().x * 0.6f, bar.getPosition().y - halfWidth}, sf::Color::Yellow },
+			{{box.getPosition().x + box.getSize().x * 0.6f, bar.getPosition().y + halfWidth}, sf::Color::Yellow },
+			{{box.getPosition().x, bar.getPosition().y + halfWidth}, sf::Color::Green}
+		};
+		target.draw(midLine, 4, sf::Quads);
 
-	midLine[0] = { {box.getPosition().x + box.getSize().x * 0.3f, bar.getPosition().y - halfWidth }, sf::Color::Yellow };
-	midLine[1] = { {box.getPosition().x + box.getSize().x, bar.getPosition().y - halfWidth}, sf::Color::Red };
-	midLine[2] = { {box.getPosition().x + box.getSize().x, bar.getPosition().y + halfWidth}, sf::Color::Red };
-	midLine[3] = { {box.getPosition().x + box.getSize().x * 0.3f, bar.getPosition().y + halfWidth}, sf::Color::Yellow };
-	target.draw(midLine, 4, sf::Quads);
-	target.draw(box);
-	target.draw(text);
-	target.draw(bar);
+		midLine[0] = { {box.getPosition().x + box.getSize().x * 0.3f, bar.getPosition().y - halfWidth }, sf::Color::Yellow };
+		midLine[1] = { {box.getPosition().x + box.getSize().x, bar.getPosition().y - halfWidth}, sf::Color::Red };
+		midLine[2] = { {box.getPosition().x + box.getSize().x, bar.getPosition().y + halfWidth}, sf::Color::Red };
+		midLine[3] = { {box.getPosition().x + box.getSize().x * 0.3f, bar.getPosition().y + halfWidth}, sf::Color::Yellow };
+		target.draw(midLine, 4, sf::Quads);
+		target.draw(box);
+		target.draw(text);
+		target.draw(bar);
+	}
 }

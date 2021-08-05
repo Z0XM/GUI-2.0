@@ -12,9 +12,12 @@ namespace gui {
 		unsigned int id;
 		Frame* currFrame;
 
+		bool active;
 	protected:
 		static unsigned int item_count;
 		bool isSelected;
+
+		std::function<void()> action;
 	public:
 		Entity(unsigned int class_id);
 		virtual ~Entity();
@@ -30,7 +33,13 @@ namespace gui {
 		virtual void activateSelection() = 0;
 		virtual void deactivateSelection() = 0;
 
-		std::function<void()> action;
+		void setActive();
+		void setInactive();
+		bool isActive();
+
+		void callAction() const;
+		bool hasAction() const;
+		void setAction(std::function<void()> func);
 
 		enum class ActionEvent{NONE, RELEASE, PRESS, MOVE } actionEvent;
 

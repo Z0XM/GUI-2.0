@@ -16,6 +16,8 @@ namespace gui {
 		Textbox(const sf::Vector2f& size = sf::Vector2f(0,0));
 		virtual ~Textbox();
 
+		void copy(Textbox& textbox);
+
 		void setSize(const sf::Vector2f& size);
 		const sf::Vector2f& getSize() const;
 

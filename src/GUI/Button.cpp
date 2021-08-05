@@ -68,7 +68,10 @@ bool gui::Button::contains(const sf::Vector2f& mousePos) const
 
 gui::Entity* gui::Button::isHit(const sf::Vector2f& mousePos)
 {
-	return this->contains(mousePos) ? this : nullptr;
+	if (isActive()) {
+		return this->contains(mousePos) ? this : nullptr;
+	}
+	return nullptr;
 }
 
 void gui::Button::activateSelection()
@@ -86,8 +89,3 @@ void gui::Button::deactivateSelection()
 	box.setOutlineThickness(original.outlineThickness);
 }
 
-void gui::Button::draw(sf::RenderTarget& target)
-{
-	target.draw(box);
-	target.draw(text);
-}

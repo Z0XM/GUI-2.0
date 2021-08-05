@@ -7,14 +7,15 @@ gui::Page::Page(const sf::Vector2f& size)
 	maxSize = size;
 	activeRegion = sf::FloatRect(0, 0, size.x, size.y);
 
-	isActive = true;
-
 	action = nullptr;
 	actionEvent = ActionEvent::NONE;
 
 	for (int i = 0; i < 4; i++) {
 		connectedScroll[i] = nullptr;
 	}
+
+	fillColor = sf::Color::Transparent;
+	outlineColor = sf::Color::Transparent;
 }
 
 gui::Page::~Page()
@@ -61,6 +62,16 @@ sf::Vector2f gui::Page::getMousePosition() const
 	return getFrame()->getMousePosition() - activePos;
 }
 
+void gui::Page::setFillColor(sf::Color color)
+{
+	fillColor = color;
+}
+
+void gui::Page::setOutineColor(sf::Color color)
+{
+	outlineColor = color;
+}
+
 void gui::setScrollAction(Page* page, int scrollPos)
 {
 	Scroll::ScrollPosition comp;
@@ -69,22 +80,22 @@ void gui::setScrollAction(Page* page, int scrollPos)
 	else if (scrollPos == Scroll::RIGHT)comp = Scroll::LEFT;
 	else if (scrollPos == Scroll::BOTTOM)comp = Scroll::TOP;
 
-	page->connectedScroll[scrollPos]->bar.action = [page, scrollPos, comp]() {
+	page->connectedScroll[scrollPos]->bar.setAction([page, scrollPos, comp]() {
 		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getMousePosition());
 		if(page->connectedScroll[comp] != nullptr)page->connectedScroll[comp]->scrollBy(offset);
 		page->moveActiveRegion({
 			offset.x * page->getSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
 			offset.y * page->getSize().y / page->connectedScroll[scrollPos]->rect.getSize().y
 			});
-	};
-	page->connectedScroll[scrollPos]->rect.action = [page, scrollPos, comp]() {
+	});
+	page->connectedScroll[scrollPos]->rect.setAction([page, scrollPos, comp]() {
 		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getMousePosition());
 		if (page->connectedScroll[comp] != nullptr)page->connectedScroll[comp]->scrollBy(offset);
 		page->moveActiveRegion({
 			offset.x * page->getSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
 			offset.y * page->getSize().y / page->connectedScroll[scrollPos]->rect.getSize().y
 			});
-	};
+	});
 }
 
 void gui::Page::setScroll(int scrollPos)
@@ -180,33 +191,24 @@ void gui::Page::move(const sf::Vector2f& offset)
 
 gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 {
-	sf::Vector2f mPos = mousePos - activePos;
-	if (mPos.x < 0 || mPos.x >= activeRegion.width || mPos.y < 0 || mPos.y >= activeRegion.height)return nullptr;
+	if (isActive()) {
+		sf::Vector2f mPos = mousePos - activePos;
+		if (mPos.x < 0 || mPos.x >= activeRegion.width || mPos.y < 0 || mPos.y >= activeRegion.height)return nullptr;
 
-	mPos += sf::Vector2f(activeRegion.left, activeRegion.top);
+		mPos += sf::Vector2f(activeRegion.left, activeRegion.top);
 
-	if (!isActive)return nullptr;
-	
-	Entity* entity = nullptr;
+		Entity* entity = nullptr;
 
-	for (int i = 0; i < 4 && entity == nullptr; i++) {
-		if (connectedScroll[i] != nullptr)entity = connectedScroll[i]->isHit(mousePos - activePos);
+		for (int i = 0; i < 4 && entity == nullptr; i++) {
+			if (connectedScroll[i] != nullptr)entity = connectedScroll[i]->isHit(mousePos - activePos);
+		}
+
+		for (auto it = entityMap.begin(); it != entityMap.end() && entity == nullptr; it++) {
+			entity = it->second->isHit(mPos);
+		}
+		return entity;
 	}
-	
-	for (auto it = entityMap.begin(); it != entityMap.end() && entity == nullptr; it++) {
-		entity = it->second->isHit(mPos);
-	}
-	return entity;
-}
-
-void gui::Page::setActive()
-{
-	isActive = true;
-}
-
-void gui::Page::setInactive()
-{
-	isActive = false;
+	return nullptr;
 }
 
 void gui::Page::activateSelection()
@@ -219,15 +221,19 @@ void gui::Page::deactivateSelection()
 
 void gui::Page::draw(sf::RenderTarget& target)
 {
-	if (isActive) {
+	if (isActive()) {
 		sf::Vertex v[4] = {
-			{{activePos.x, activePos.y}, sf::Color(255,255,255)},
-			{{activePos.x + activeRegion.width, activePos.y}, sf::Color(255,255,255)},
-			{{activePos.x + activeRegion.width, activePos.y + activeRegion.height}, sf::Color(255,255,255)},
-			{{activePos.x, activePos.y + activeRegion.height}, sf::Color(255,255,255)}
+			{{activePos.x, activePos.y}, outlineColor},
+			{{activePos.x + activeRegion.width, activePos.y}, outlineColor},
+			{{activePos.x + activeRegion.width, activePos.y + activeRegion.height}, outlineColor},
+			{{activePos.x, activePos.y + activeRegion.height}, outlineColor}
 		};
 
 		target.draw(v, 4, sf::LinesStrip);
+
+		v[0].color = v[1].color = v[2].color = v[3].color = fillColor;
+
+		target.draw(v, 4, sf::Quads);
 
 		sf::RenderTexture rt;
 		rt.create(activeRegion.width, activeRegion.height);

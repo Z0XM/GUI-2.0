@@ -35,6 +35,8 @@ namespace gui {
 
 		friend void setScrollAction(Page* page, int scrollPos);
 
+		void setAction(std::function<void()> func) = delete;
+
 	private:
 		ScrollPosition scrollPos;
 	};

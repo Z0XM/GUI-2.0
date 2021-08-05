@@ -25,8 +25,6 @@ namespace gui {
 		void activateSelection() override;
 		void deactivateSelection() override;
 
-		void draw(sf::RenderTarget& target) override;
-
 	private:
 		struct {
 			sf::Color fillColor, outlineColor;

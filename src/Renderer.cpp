@@ -31,7 +31,7 @@ Renderer::Renderer()
 	button.setHighlightOutlineThickness(5);
 	button.setCharacterSize(22);
 	button.setTextFillColor(sf::Color::White);
-	button.setFont(font);o
+	button.setFont(font);
 	button.setString("Button");
 
 	text.setSize({ 80, 40 });
@@ -75,9 +75,9 @@ Renderer::Renderer()
 	slider.setFont(font);
 	slider.setCharacterSize(22);
 	slider.setString("Speed");
-	slider.action = [this]() {
+	slider.setAction([this]() {
 		slider.moveSliderBar(page.getMousePosition());
-	};
+	});
 	page.addEntity(slider);
 
 	page.setScroll(gui::Scroll::BOTTOM);
@@ -87,7 +87,7 @@ Renderer::Renderer()
 	page.removeScroll(gui::Scroll::LEFT);
 	page.setName(button2, "b");
 
-	page.getByName("b")->action = [] {std::cout << "hello"; };
+	page.getByName("b")->setAction([] {std::cout << "hello"; });
 }
 
 Renderer::~Renderer()

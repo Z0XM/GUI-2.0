@@ -102,13 +102,18 @@ void gui::Scroll::scrollBy(const sf::Vector2f& offset)
 
 gui::Entity* gui::Scroll::isHit(const sf::Vector2f& mousePos)
 {
-	return bar.getGlobalBounds().contains(mousePos) ? &bar : (rect.getGlobalBounds().contains(mousePos) ? &rect : nullptr);
+	if (isActive()) {
+		return bar.getGlobalBounds().contains(mousePos) ? &bar : (rect.getGlobalBounds().contains(mousePos) ? &rect : nullptr);
+	}
+	return nullptr;
 }
 
 void gui::Scroll::draw(sf::RenderTarget& target)
 {
-	rect.draw(target);
-	bar.draw(target);
+	if (isActive()) {
+		rect.draw(target);
+		bar.draw(target);
+	}
 }
 
 void gui::Scroll::activateSelection()
