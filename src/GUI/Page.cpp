@@ -16,6 +16,15 @@ gui::Page::Page(const sf::Vector2f& size)
 
 	fillColor = sf::Color::Transparent;
 	outlineColor = sf::Color::Transparent;
+
+	function.setSize({ 15, 15 });
+	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) -  sf::Vector2f(15, 15));
+	function.setFillColor(sf::Color(255,255,255,168));
+	function.setHighlightFillColor(sf::Color::White);
+	function.setText(false);
+	function.actionEvent = ActionEvent::MOVE;
+	function.setAction([this] {setPosition(getFrame()->getMousePosition() - sf::Vector2f(activeRegion.width, activeRegion.height) + sf::Vector2f(15, 15)); });
+	function.setInactive();
 }
 
 gui::Page::~Page()
@@ -59,7 +68,7 @@ std::string gui::Page::getName(unsigned int id)
 
 sf::Vector2f gui::Page::getMousePosition() const
 {
-	return getFrame()->getMousePosition() - activePos;
+	return getFrame()->getMousePosition() - activePos + sf::Vector2f(activeRegion.left, activeRegion.top);
 }
 
 void gui::Page::setFillColor(sf::Color color)
@@ -81,7 +90,7 @@ void gui::setScrollAction(Page* page, int scrollPos)
 	else if (scrollPos == Scroll::BOTTOM)comp = Scroll::TOP;
 
 	page->connectedScroll[scrollPos]->bar.setAction([page, scrollPos, comp]() {
-		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getMousePosition());
+		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getFrame()->getMousePosition() - page->getPosition());
 		if(page->connectedScroll[comp] != nullptr)page->connectedScroll[comp]->scrollBy(offset);
 		page->moveActiveRegion({
 			offset.x * page->getSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
@@ -89,7 +98,7 @@ void gui::setScrollAction(Page* page, int scrollPos)
 			});
 	});
 	page->connectedScroll[scrollPos]->rect.setAction([page, scrollPos, comp]() {
-		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getMousePosition());
+		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getFrame()->getMousePosition() - page->getPosition());
 		if (page->connectedScroll[comp] != nullptr)page->connectedScroll[comp]->scrollBy(offset);
 		page->moveActiveRegion({
 			offset.x * page->getSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
@@ -131,6 +140,8 @@ void gui::Page::setActiveRegion(const sf::FloatRect& region)
 {
 	activeRegion = region;
 	limitActiveRegion();
+
+	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25));
 }
 
 sf::FloatRect gui::Page::getActiveRegion() const
@@ -143,6 +154,8 @@ void gui::Page::moveActiveRegion(float offsetX, float offsetY)
 	activeRegion.left += offsetX;
 	activeRegion.top += offsetY;
 	limitActiveRegion();
+
+	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25));
 }
 
 void gui::Page::moveActiveRegion(const sf::Vector2f& offset)
@@ -150,6 +163,8 @@ void gui::Page::moveActiveRegion(const sf::Vector2f& offset)
 	activeRegion.left += offset.x;
 	activeRegion.top += offset.y;
 	limitActiveRegion();
+
+	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25));
 }
 
 void gui::Page::setSize(const sf::Vector2f& size)
@@ -189,6 +204,14 @@ void gui::Page::move(const sf::Vector2f& offset)
 	activePos += offset;
 }
 
+bool gui::Page::contains(const sf::Vector2f& mousePos)
+{
+	sf::FloatRect rect = getActiveRegion();
+	rect.left = activePos.x; rect.top = activePos.y;
+
+	return rect.contains(mousePos);
+}
+
 gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 {
 	if (isActive()) {
@@ -199,6 +222,8 @@ gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 
 		Entity* entity = nullptr;
 
+		entity = function.isHit(mousePos - activePos);
+
 		for (int i = 0; i < 4 && entity == nullptr; i++) {
 			if (connectedScroll[i] != nullptr)entity = connectedScroll[i]->isHit(mousePos - activePos);
 		}
@@ -206,6 +231,11 @@ gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 		for (auto it = entityMap.begin(); it != entityMap.end() && entity == nullptr; it++) {
 			entity = it->second->isHit(mPos);
 		}
+
+		if (entity == nullptr && contains(mousePos))entity = this;
+
+		if (entity == nullptr)function.setInactive();
+
 		return entity;
 	}
 	return nullptr;
@@ -213,10 +243,15 @@ gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 
 void gui::Page::activateSelection()
 {
+	isSelected = true;
+	function.setActive();
 }
 
 void gui::Page::deactivateSelection()
 {
+	isSelected = false;
+	if(!function.contains(getFrame()->getMousePosition() - activePos))
+		function.setInactive();
 }
 
 void gui::Page::draw(sf::RenderTarget& target)
@@ -255,5 +290,9 @@ void gui::Page::draw(sf::RenderTarget& target)
 			connectedScroll[i]->draw(target);
 			connectedScroll[i]->move(-activePos);
 		}
+
+		function.move(activePos);
+		function.draw(target);
+		function.move(-activePos);
 	}
 }

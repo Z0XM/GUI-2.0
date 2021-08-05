@@ -88,6 +88,7 @@ Renderer::Renderer()
 	page.setName(button2, "b");
 
 	page.getByName("b")->setAction([] {std::cout << "hello"; });
+	page.setPosition(50, page.getPosition().y);
 }
 
 Renderer::~Renderer()

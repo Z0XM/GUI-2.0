@@ -18,6 +18,8 @@ namespace gui {
 
 		sf::Color fillColor, outlineColor;
 
+		gui::Button function;
+
 		void limitActiveRegion();
 	public:
 		Page(const sf::Vector2f& size = sf::Vector2f(0, 0));
@@ -54,6 +56,7 @@ namespace gui {
 		void move(float offsetX, float offsetY);
 		void move(const sf::Vector2f& offset);
 
+		bool contains(const sf::Vector2f& mousePos);
 		Entity* isHit(const sf::Vector2f& mousePos);
 
 		virtual void activateSelection() override;
