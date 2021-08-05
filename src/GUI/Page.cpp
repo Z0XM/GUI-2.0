@@ -18,12 +18,12 @@ gui::Page::Page(const sf::Vector2f& size)
 	outlineColor = sf::Color::Transparent;
 
 	function.setSize({ 15, 15 });
-	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) -  sf::Vector2f(15, 15));
+	function.setPosition(getPosition());
 	function.setFillColor(sf::Color(255,255,255,168));
 	function.setHighlightFillColor(sf::Color::White);
 	function.setText(false);
 	function.actionEvent = ActionEvent::MOVE;
-	function.setAction([this] {setPosition(getFrame()->getMousePosition() - sf::Vector2f(activeRegion.width, activeRegion.height) + sf::Vector2f(15, 15)); });
+	function.setAction([this] {setPosition(getFrame()->getMousePosition() - sf::Vector2f(activeRegion.width - 25, activeRegion.height - 25)); });
 	function.setInactive();
 }
 
@@ -140,8 +140,6 @@ void gui::Page::setActiveRegion(const sf::FloatRect& region)
 {
 	activeRegion = region;
 	limitActiveRegion();
-
-	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25));
 }
 
 sf::FloatRect gui::Page::getActiveRegion() const
@@ -154,8 +152,6 @@ void gui::Page::moveActiveRegion(float offsetX, float offsetY)
 	activeRegion.left += offsetX;
 	activeRegion.top += offsetY;
 	limitActiveRegion();
-
-	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25));
 }
 
 void gui::Page::moveActiveRegion(const sf::Vector2f& offset)
@@ -163,8 +159,6 @@ void gui::Page::moveActiveRegion(const sf::Vector2f& offset)
 	activeRegion.left += offset.x;
 	activeRegion.top += offset.y;
 	limitActiveRegion();
-
-	function.setPosition(getPosition() + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25));
 }
 
 void gui::Page::setSize(const sf::Vector2f& size)
@@ -222,7 +216,7 @@ gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 
 		Entity* entity = nullptr;
 
-		entity = function.isHit(mousePos - activePos);
+		entity = function.isHit(mousePos - (activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25)));
 
 		for (int i = 0; i < 4 && entity == nullptr; i++) {
 			if (connectedScroll[i] != nullptr)entity = connectedScroll[i]->isHit(mousePos - activePos);
@@ -234,7 +228,8 @@ gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 
 		if (entity == nullptr && contains(mousePos))entity = this;
 
-		if (entity == nullptr)function.setInactive();
+		if (entity == nullptr)
+			function.setInactive();
 
 		return entity;
 	}
@@ -250,7 +245,7 @@ void gui::Page::activateSelection()
 void gui::Page::deactivateSelection()
 {
 	isSelected = false;
-	if(!function.contains(getFrame()->getMousePosition() - activePos))
+	if(!function.contains(getFrame()->getMousePosition() - (activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25))))
 		function.setInactive();
 }
 
@@ -291,8 +286,8 @@ void gui::Page::draw(sf::RenderTarget& target)
 			connectedScroll[i]->move(-activePos);
 		}
 
-		function.move(activePos);
+		function.move(activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25,25));
 		function.draw(target);
-		function.move(-activePos);
+		function.move(-(activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25)));
 	}
 }

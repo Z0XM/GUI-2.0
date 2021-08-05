@@ -6,7 +6,7 @@ void Renderer::initWindow()
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 4;
 
-	window.create(sf::VideoMode(1200, 700), "GUI 2.0", sf::Style::Default, settings);
+	window.create(sf::VideoMode(1500, 500), "GUI 2.0", sf::Style::Default, settings);
 	window.setFramerateLimit(60);
 }
 
@@ -53,9 +53,11 @@ Renderer::Renderer()
 	button3.setString("button3");
 	button3.setPosition(210, 5);
 
-	page.setSize({ this->getWinSize().x * 1.5f , 500 });
-	page.setActiveRegion({ 300, 0, 500, 300});
-	page.setPosition(0, getWinSize().y - 20 - 400);
+	page.setFillColor(sf::Color(255, 255, 255, 26));
+	page.setSize({ 400, 1000 });
+	page.setPosition(1050, 0);
+	page.setActiveRegion({ 0,0, 400, 500 });
+	page.setScroll(gui::Scroll::RIGHT);
 
 	page.addEntity(button);
 	page.addEntity(button2);
@@ -88,7 +90,6 @@ Renderer::Renderer()
 	page.setName(button2, "b");
 
 	page.getByName("b")->setAction([] {std::cout << "hello"; });
-	page.setPosition(50, page.getPosition().y);
 }
 
 Renderer::~Renderer()
