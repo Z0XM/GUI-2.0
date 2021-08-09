@@ -24,11 +24,11 @@ namespace gui {
 		void move(float offsetX, float offsetY);
 		void move(const sf::Vector2f& offset);
 		sf::Vector2f scrollTo(const sf::Vector2f& mousePos);
-		void scrollBy(const sf::Vector2f& offset);
+		sf::Vector2f scrollBy(const sf::Vector2f& offset);
 
 		Entity* isHit(const sf::Vector2f& mousePos);
 
-		void draw(sf::RenderTarget& target);
+		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates::Default) const;
 
 		void activateSelection() override;
 		void deactivateSelection() override;

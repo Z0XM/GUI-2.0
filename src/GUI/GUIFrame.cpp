@@ -1,7 +1,18 @@
 #include "GUIFrame.hpp"
+#include "Page.hpp"
+#include "Scroll.hpp"
+#include "Slider.hpp"
+#include "Textbox.hpp"
+#include "TextButton.hpp"
+#include "Dropdown.hpp"
 
 namespace gui {
 	unsigned int Entity::item_count = 0;
+
+	void Entity::registerVar(Entity* entity)
+	{
+		varRegister.push_back(entity);
+	}
 
 	Entity::Entity(unsigned int class_id)
 	{
@@ -23,7 +34,12 @@ namespace gui {
 		return id;
 	}
 
-	const Frame* Entity::getFrame() const
+	unsigned int getClassID(Entity& entity)
+	{
+		return entity.getID() >> 24;
+	}
+
+	Frame* Entity::getFrame() const
 	{
 		return currFrame;
 	}
@@ -36,7 +52,7 @@ namespace gui {
 	{
 		active = false;
 	}
-	bool Entity::isActive()
+	bool Entity::isActive() const
 	{
 		return active;
 	}
@@ -78,6 +94,8 @@ namespace gui {
 	void setEntityFrame(Entity& entity, Frame* frame)
 	{
 		entity.currFrame = frame;
+		for (int i = 0; i < entity.varRegister.size(); i++)
+			entity.varRegister[i]->currFrame = frame;
 	}
 
 	void Frame::addEntity(Entity& entity)
@@ -92,6 +110,11 @@ namespace gui {
 		std::string name = getName(entity.getID());
 		if(name != "")removeName(name);
 		entityMap.erase(entity.getID());
+	}
+
+	void Frame::removeEntity(unsigned int id)
+	{
+		entityMap.erase(id);
 	}
 
 	void Frame::setName(const Entity& entity, const std::string& name)
@@ -124,9 +147,13 @@ namespace gui {
 		}
 		return "";
 	}
+	sf::Vector2f Frame::getLastMouseOffset() const
+	{
+		return getMousePosition() - lastMousePos;
+	}
 	void Frame::update()
 	{
-		if (clicked != nullptr && clicked->actionEvent == Entity::ActionEvent::MOVE && clicked->hasAction()) {
+		if (clicked != nullptr && clicked->actionEvent == Entity::ActionEvent::MOUSEHELD && clicked->hasAction()) {
 			clicked->callAction();
 		}
 		else {
@@ -142,14 +169,18 @@ namespace gui {
 				if (mouseHoveringOn != nullptr)mouseHoveringOn->activateSelection();
 			}
 		}
+
+		lastMousePos = getMousePosition();
 	}
-	void Frame::pollEvents(sf::Event e)
+	bool Frame::pollEvents(sf::Event e)
 	{
 		if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == sf::Mouse::Left) {
 			clicked = mouseHoveringOn;
 
 			if (clicked != nullptr && clicked->actionEvent == Entity::ActionEvent::PRESS && clicked->hasAction())
 				clicked->callAction();
+
+			return true;
 		}
 		else if(e.type == sf::Event::MouseButtonReleased) {
 			if (clicked != nullptr && clicked == mouseHoveringOn && e.mouseButton.button == sf::Mouse::Left)
@@ -158,8 +189,20 @@ namespace gui {
 					clicked->callAction();
 			}
 			clicked = nullptr;
+
+			return true;
+		}
+		else if (e.type == sf::Event::MouseWheelScrolled) {
+			bool wasEventPolled = false;
+			for (auto it = entityMap.begin(); it != entityMap.end() && !wasEventPolled; it++) {
+				if (getClassID(*it->second) == __GUI_ID_PAGE && ((Page*)it->second)->contains(getMousePosition()))
+					wasEventPolled = ((Page*)it->second)->pollEvents(e);
+				else if (getClassID(*it->second) == __GUI_ID_DROPDOWN && ((Dropdown*)it->second)->containsExcludingHeader(getMousePosition()))
+					wasEventPolled = ((Dropdown*)it->second)->pollEvents(e);
+			}
 		}
 
+		return false;
 	}
 	void Frame::draw()
 	{

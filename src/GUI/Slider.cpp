@@ -3,7 +3,7 @@
 #include <algorithm>
 
 gui::Slider::Slider(const sf::Vector2f& size)
-	:Textbox(size, 2)
+	:Textbox(size, __GUI_ID_SLIDER)
 {
 	offset = 0;
 	bar.setSize({size.y * 0.25f, size.x * 0.25f});
@@ -11,7 +11,7 @@ gui::Slider::Slider(const sf::Vector2f& size)
 	setBarFillColor(sf::Color::Red);
 	setBarHighlightColor(sf::Color(255, 165, 0));
 
-	actionEvent = ActionEvent::MOVE;
+	actionEvent = ActionEvent::MOUSEHELD;
 	action = [this]() {
 		moveSliderBar(getFrame()->getMousePosition());
 	};
@@ -29,7 +29,6 @@ void gui::Slider::copy(const Slider& slider)
 
 	box = slider.box;
 	text = slider.text;
-	hasText = slider.hasText;
 	alignment = slider.alignment;
 }
 
@@ -144,8 +143,7 @@ void gui::Slider::deactivateSelection()
 	bar.setFillColor(barColor);
 }
 
-
-void gui::Slider::draw(sf::RenderTarget& target)
+void gui::Slider::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
 	if (isActive()) {
 		float halfWidth = 1.5f;

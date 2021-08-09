@@ -153,6 +153,8 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\GUI\Button.cpp" />
+    <ClCompile Include="src\GUI\TextButton.cpp" />
+    <ClCompile Include="src\GUI\Dropdown.cpp" />
     <ClCompile Include="src\GUI\GUIFrame.cpp" />
     <ClCompile Include="src\GUI\Page.cpp" />
     <ClCompile Include="src\GUI\Scroll.cpp" />
@@ -163,6 +165,8 @@
   <ItemGroup>
     <ClInclude Include="src\GUI.hpp" />
     <ClInclude Include="src\GUI\Button.hpp" />
+    <ClInclude Include="src\GUI\TextButton.hpp" />
+    <ClInclude Include="src\GUI\Dropdown.hpp" />
     <ClInclude Include="src\GUI\GUIFrame.hpp" />
     <ClInclude Include="src\GUI\Page.hpp" />
     <ClInclude Include="src\GUI\Scroll.hpp" />

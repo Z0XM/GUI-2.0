@@ -1,69 +1,75 @@
-#pragma once
 #include "Button.hpp"
 
-gui::Button::Button(const sf::Vector2f& size)
-	:Textbox(size, 1)
+gui::Button::Button()
+	:Entity(__GUI_ID_BUTTON)
 {
-	action = nullptr;
-	actionEvent = ActionEvent::RELEASE;
 }
 
 gui::Button::~Button()
 {
 }
 
-void gui::Button::copy(const Button& button)
+void gui::Button::copy(Button& button)
 {
-	box = button.box;
-	text = button.text;
-	hasText = button.hasText;
-	alignment = button.alignment;
-
-	action = nullptr;
-	actionEvent = ActionEvent::RELEASE;
-	original = button.original;
 	highlight = button.highlight;
+	original = button.original;
+
+	this->actionEvent = button.actionEvent;
+	this->action = button.action;
+	this->setPointCount(button.getPointCount());
+	for (int i = 0; i < getPointCount(); i++) {
+		this->setPoint(i, button.getPoint(i));
+	}
+	this->setPosition(button.getPosition());
+	this->setRotation(button.getRotation());
+	this->setScale(button.getScale());
+	this->setOrigin(button.getOrigin());
 }
 
 void gui::Button::setHighlightFillColor(const sf::Color& color)
 {
 	highlight.fillColor = color;
-	if (isSelected)box.setFillColor(color);
+	if (isSelected)setFillColor(color);
 }
 
 void gui::Button::setHighlightOutlineColor(const sf::Color& color)
 {
 	highlight.outlineColor = color;
-	if (isSelected)box.setOutlineColor(color);
+	if (isSelected)setOutlineColor(color);
 }
 
 void gui::Button::setHighlightOutlineThickness(float thickness)
 {
 	highlight.outlineThickness = thickness;
-	if (isSelected)box.setOutlineThickness(thickness);
+	if (isSelected)setOutlineThickness(thickness);
 }
 
-void gui::Button::setFillColor(const sf::Color& color)
+void gui::Button::setOriginalFillColor(const sf::Color& color)
 {
 	original.fillColor = color;
-	if (!isSelected)box.setFillColor(color);
+	if (!isSelected)setFillColor(color);
 }
 
-void gui::Button::setOutlineColor(const sf::Color& color)
+void gui::Button::setOriginalOutlineColor(const sf::Color& color)
 {
 	original.outlineColor = color;
-	if (!isSelected)box.setOutlineColor(color);
+	if (!isSelected)setOutlineColor(color);
 }
 
-void gui::Button::setOutlineThickness(float thickness)
+void gui::Button::setOriginalOutlineThickness(float thickness)
 {
 	original.outlineThickness = thickness;
-	if (!isSelected)box.setOutlineThickness(thickness);
+	if (!isSelected)setOutlineThickness(thickness);
+}
+
+sf::Vector2f gui::Button::getSize() const
+{
+	return sf::Vector2f(getGlobalBounds().width, getGlobalBounds().height);
 }
 
 bool gui::Button::contains(const sf::Vector2f& mousePos) const
 {
-	return box.getGlobalBounds().contains(mousePos);
+	return getGlobalBounds().contains(mousePos);
 }
 
 gui::Entity* gui::Button::isHit(const sf::Vector2f& mousePos)
@@ -77,15 +83,22 @@ gui::Entity* gui::Button::isHit(const sf::Vector2f& mousePos)
 void gui::Button::activateSelection()
 {
 	isSelected = true;
-	box.setFillColor(highlight.fillColor);
-	box.setOutlineColor(highlight.outlineColor);
-	box.setOutlineThickness(highlight.outlineThickness);
+	setFillColor(highlight.fillColor);
+	setOutlineColor(highlight.outlineColor);
+	setOutlineThickness(highlight.outlineThickness);
 }
+
 void gui::Button::deactivateSelection()
 {
 	isSelected = false;
-	box.setFillColor(original.fillColor);
-	box.setOutlineColor(original.outlineColor);
-	box.setOutlineThickness(original.outlineThickness);
+	setFillColor(original.fillColor);
+	setOutlineColor(original.outlineColor);
+	setOutlineThickness(original.outlineThickness);
 }
 
+void gui::Button::draw(sf::RenderTarget& target, sf::RenderStates states) const
+{
+	if (isActive()) {
+		target.draw((sf::ConvexShape) * this, states);
+	}
+}

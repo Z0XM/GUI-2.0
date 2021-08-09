@@ -4,23 +4,22 @@
 #include "Page.hpp"
 
 gui::Scroll::Scroll()
-	:Entity(3)
+	:Entity(__GUI_ID_SCROLL)
 {
-	rect.setFillColor(sf::Color(41, 41, 41));
-	rect.setOutlineColor(sf::Color::Transparent);
+	rect.setPointCount(4);
+	rect.setOriginalFillColor(sf::Color(41, 41, 41));
+	rect.setOriginalOutlineColor(sf::Color::Transparent);
 	rect.setHighlightFillColor(sf::Color(60, 60, 60));
 	rect.setHighlightOutlineColor(sf::Color::Transparent);
 	
-	bar.setFillColor(sf::Color(150, 150, 150, 70));
-	bar.setOutlineColor(sf::Color::Transparent);
+	bar.setPointCount(4);
+	bar.setOriginalFillColor(sf::Color(150, 150, 150, 70));
+	bar.setOriginalOutlineColor(sf::Color::Transparent);
 	bar.setHighlightFillColor(sf::Color(200, 200, 200, 70));
 	bar.setHighlightOutlineColor(sf::Color::Transparent);
 
-	rect.setText(false);
-	bar.setText(false);
-
 	rect.actionEvent = ActionEvent::PRESS;
-	bar.actionEvent = ActionEvent::MOVE;
+	bar.actionEvent = ActionEvent::MOUSEHELD;
 
 	scrollPos = RIGHT;
 }
@@ -50,14 +49,32 @@ void gui::Scroll::setPage(Page& page, ScrollPosition scrollPos)
 	case BOTTOM: rect.setPosition(0, bound.height - 10); break;
 	}
 	if (scrollPos == LEFT || scrollPos == RIGHT) {
-		rect.setSize({ 10, bound.height });
-		bar.setSize(sf::Vector2f(rect.getSize().x, rect.getSize().y * rect.getSize().y / page.getSize().y));
-		bar.setPosition(rect.getPosition() + sf::Vector2f(0, bound.top * rect.getSize().y / page.getSize().y));
+		rect.setPoint(0, sf::Vector2f(0, 0));
+		rect.setPoint(1, sf::Vector2f(10, 0));
+		rect.setPoint(2, sf::Vector2f(10, bound.height));
+		rect.setPoint(3, sf::Vector2f(0, bound.height));
+
+		sf::Vector2f barSize(sf::Vector2f(rect.getSize().x, rect.getSize().y * rect.getSize().y / page.getMaxSize().y));
+		bar.setPoint(0, sf::Vector2f(0, 0));
+		bar.setPoint(1, sf::Vector2f(barSize.x, 0));
+		bar.setPoint(2, barSize);
+		bar.setPoint(3, sf::Vector2f(0, barSize.y));
+
+		bar.setPosition(rect.getPosition() + sf::Vector2f(0, bound.top * rect.getSize().y / page.getMaxSize().y));
 	}
 	else if (scrollPos == BOTTOM || scrollPos == TOP) {
-		rect.setSize({ bound.width, 10 });
-		bar.setSize(sf::Vector2f(rect.getSize().x * rect.getSize().x / page.getSize().x, rect.getSize().y));
-		bar.setPosition(rect.getPosition() + sf::Vector2f(bound.left * rect.getSize().x / page.getSize().x, 0));
+		rect.setPoint(0, sf::Vector2f(0, 0));
+		rect.setPoint(1, sf::Vector2f(bound.width, 0));
+		rect.setPoint(2, sf::Vector2f(bound.width, 10));
+		rect.setPoint(3, sf::Vector2f(0, 10));
+
+		sf::Vector2f barSize(sf::Vector2f(rect.getSize().x * rect.getSize().x / page.getMaxSize().x, rect.getSize().y));
+		bar.setPoint(0, sf::Vector2f(0, 0));
+		bar.setPoint(1, sf::Vector2f(barSize.x, 0));
+		bar.setPoint(2, barSize);
+		bar.setPoint(3, sf::Vector2f(0, barSize.y));
+
+		bar.setPosition(rect.getPosition() + sf::Vector2f(bound.left * rect.getSize().x / page.getMaxSize().x, 0));
 	}
 }
 
@@ -95,9 +112,18 @@ sf::Vector2f gui::Scroll::scrollTo(const sf::Vector2f& mousePos)
 	}
 }
 
-void gui::Scroll::scrollBy(const sf::Vector2f& offset)
+sf::Vector2f gui::Scroll::scrollBy(const sf::Vector2f& offset)
 {
+
 	bar.move(offset);
+
+	if (bar.getPosition().x < rect.getPosition().x || bar.getPosition().x + bar.getSize().x > rect.getPosition().x + rect.getSize().x
+		|| bar.getPosition().y < rect.getPosition().y || bar.getPosition().y + bar.getSize().y > rect.getPosition().y + rect.getSize().y)
+		bar.move(-offset);
+
+	else return offset;
+
+	return { 0,0 };
 }
 
 gui::Entity* gui::Scroll::isHit(const sf::Vector2f& mousePos)
@@ -108,7 +134,7 @@ gui::Entity* gui::Scroll::isHit(const sf::Vector2f& mousePos)
 	return nullptr;
 }
 
-void gui::Scroll::draw(sf::RenderTarget& target)
+void gui::Scroll::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
 	if (isActive()) {
 		rect.draw(target);
@@ -118,8 +144,10 @@ void gui::Scroll::draw(sf::RenderTarget& target)
 
 void gui::Scroll::activateSelection()
 {
+	isSelected = true;
 }
 
 void gui::Scroll::deactivateSelection()
 {
+	isSelected = false;
 }

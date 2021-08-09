@@ -63,18 +63,15 @@ namespace gui {
 
 		void alignText(const TextAlign& = TextAlign::CENTER);
 
-		void setText(bool hasText);
-
 		Entity* isHit(const sf::Vector2f& mousePos);
 
-		virtual void draw(sf::RenderTarget& target);
+		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates::Default) const;
 
 		virtual void activateSelection();
 		virtual void deactivateSelection();
 	protected:
 		sf::RectangleShape box;
 		sf::Text text;
-		bool hasText;
 
 		void updateText();
 		TextAlign alignment;

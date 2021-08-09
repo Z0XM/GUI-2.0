@@ -2,7 +2,7 @@
 #include "Scroll.hpp"
 
 gui::Page::Page(const sf::Vector2f& size)
-	:Entity(4)
+	:Entity(__GUI_ID_PAGE)
 {
 	maxSize = size;
 	activeRegion = sf::FloatRect(0, 0, size.x, size.y);
@@ -17,14 +17,8 @@ gui::Page::Page(const sf::Vector2f& size)
 	fillColor = sf::Color::Transparent;
 	outlineColor = sf::Color::Transparent;
 
-	function.setSize({ 15, 15 });
-	function.setPosition(getPosition());
-	function.setFillColor(sf::Color(255,255,255,168));
-	function.setHighlightFillColor(sf::Color::White);
-	function.setText(false);
-	function.actionEvent = ActionEvent::MOVE;
-	function.setAction([this] {setPosition(getFrame()->getMousePosition() - sf::Vector2f(activeRegion.width - 25, activeRegion.height - 25)); });
-	function.setInactive();
+	setHeader(false);
+	header.setInactive();
 }
 
 gui::Page::~Page()
@@ -36,14 +30,29 @@ gui::Page::~Page()
 
 void gui::Page::addEntity(Entity& entity)
 {
-	entityMap.insert(std::make_pair(entity.getID(), &entity));
+	allEntities.push_back(&entity);
 }
 
 void gui::Page::removeEntity(const Entity& entity)
 {
 	std::string name = getName(entity.getID());
 	if (name != "")Frame::removeName(name);
-	entityMap.erase(entity.getID());
+	for (int i = 0; i < allEntities.size(); i++) {
+		if (allEntities[i]->getID() == entity.getID()) {
+			allEntities.erase(allEntities.begin() + i);
+			break;
+		}
+	}
+}
+
+void gui::Page::removeEntity(unsigned int id)
+{
+	for (int i = 0; i < allEntities.size(); i++) {
+		if (allEntities[i]->getID() == id) {
+			allEntities.erase(allEntities.begin() + i);
+			break;
+		}
+	}
 }
 
 void gui::Page::setName(const Entity& entity, const std::string& name)
@@ -53,12 +62,17 @@ void gui::Page::setName(const Entity& entity, const std::string& name)
 
 gui::Entity* gui::Page::getByID(unsigned int id) const
 {
-	return entityMap.at(id);
+	for (int i = 0; i < allEntities.size(); i++) {
+		if (allEntities[i]->getID() == id) {
+			return allEntities[i];
+		}
+	}
+	return nullptr;
 }
 
 gui::Entity* gui::Page::getByName(const std::string& name) const
 {
-	return entityMap.at(Frame::getIDByName(name));
+	return getByID(Frame::getIDByName(name));
 }
 
 std::string gui::Page::getName(unsigned int id)
@@ -76,10 +90,80 @@ void gui::Page::setFillColor(sf::Color color)
 	fillColor = color;
 }
 
-void gui::Page::setOutineColor(sf::Color color)
+void gui::Page::setOutlineColor(sf::Color color)
 {
 	outlineColor = color;
 }
+
+void gui::Page::setHeader(bool hasHeader, bool isMovable, bool isMinimisable)
+{
+	if (hasHeader) {
+		header.setPointCount(4);
+		header.setPoint(0, sf::Vector2f(0,0));
+		header.setPoint(1, sf::Vector2f(activeRegion.width, 0));
+		header.setPoint(2, sf::Vector2f(activeRegion.width, 15));
+		header.setPoint(3, sf::Vector2f(0,15));
+		header.setPosition(0, -15);
+		header.setOriginalFillColor(sf::Color::White);
+		header.setHighlightFillColor(sf::Color::White);
+		header.actionEvent = ActionEvent::MOUSEHELD;
+		if (isMovable)header.setAction([this] {move(getFrame()->getLastMouseOffset()); });
+		else header.setAction(nullptr);
+		header.setActive();
+
+		collapse.setPointCount(4);
+		collapse.setPoint(0, sf::Vector2f(0, 0));
+		collapse.setPoint(1, sf::Vector2f(15, 0));
+		collapse.setPoint(2, sf::Vector2f(15, 15));
+		collapse.setPoint(3, sf::Vector2f(0, 15));
+		collapse.setPosition(activeRegion.width - 15, -15);
+		collapse.setOriginalFillColor(sf::Color::Red);
+		collapse.setHighlightFillColor(sf::Color::Red);
+		collapse.setHighlightOutlineColor(sf::Color::Red);
+		collapse.setHighlightOutlineThickness(3);
+		collapse.actionEvent = ActionEvent::RELEASE;
+		if (isMinimisable) {
+			collapse.setAction([this] { isActive() ? setInactive() : setActive(); });
+			collapse.setActive();
+		}
+		else {
+			collapse.setAction(nullptr);
+			collapse.setInactive();
+		}
+	}
+	else {
+		header.setInactive();
+		header.actionEvent = ActionEvent::NONE;
+		header.setAction(nullptr);
+
+		collapse.setInactive();
+		collapse.actionEvent = ActionEvent::NONE;
+		collapse.setAction(nullptr);
+	}
+}
+
+void gui::Page::scrollBy(int scrollPos, const sf::Vector2f& offset)
+{
+	Scroll::ScrollPosition comp;
+	if (scrollPos == Scroll::LEFT)comp = Scroll::RIGHT;
+	else if (scrollPos == Scroll::TOP)comp = Scroll::BOTTOM;
+	else if (scrollPos == Scroll::RIGHT)comp = Scroll::LEFT;
+	else if (scrollPos == Scroll::BOTTOM)comp = Scroll::TOP;
+
+	sf::Vector2f newOffset;
+
+	if (connectedScroll[scrollPos] != nullptr)newOffset = connectedScroll[scrollPos]->scrollBy(offset);
+	if (connectedScroll[comp] != nullptr)newOffset = connectedScroll[comp]->scrollBy(newOffset);
+
+	if (connectedScroll[scrollPos] == nullptr)scrollPos = comp;
+
+	if (connectedScroll[scrollPos] != nullptr)
+		moveActiveRegion({
+		newOffset.x * getMaxSize().x / connectedScroll[scrollPos]->getSize().x,
+		newOffset.y * getMaxSize().y / connectedScroll[scrollPos]->getSize().y
+			});
+}
+
 
 void gui::setScrollAction(Page* page, int scrollPos)
 {
@@ -91,18 +175,18 @@ void gui::setScrollAction(Page* page, int scrollPos)
 
 	page->connectedScroll[scrollPos]->bar.setAction([page, scrollPos, comp]() {
 		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getFrame()->getMousePosition() - page->getPosition());
-		if(page->connectedScroll[comp] != nullptr)page->connectedScroll[comp]->scrollBy(offset);
+		if (page->connectedScroll[comp] != nullptr)page->connectedScroll[comp]->scrollBy(offset);
 		page->moveActiveRegion({
-			offset.x * page->getSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
-			offset.y * page->getSize().y / page->connectedScroll[scrollPos]->rect.getSize().y
+			offset.x * page->getMaxSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
+			offset.y * page->getMaxSize().y / page->connectedScroll[scrollPos]->rect.getSize().y
 			});
 	});
 	page->connectedScroll[scrollPos]->rect.setAction([page, scrollPos, comp]() {
 		sf::Vector2f offset = page->connectedScroll[scrollPos]->scrollTo(page->getFrame()->getMousePosition() - page->getPosition());
 		if (page->connectedScroll[comp] != nullptr)page->connectedScroll[comp]->scrollBy(offset);
 		page->moveActiveRegion({
-			offset.x * page->getSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
-			offset.y * page->getSize().y / page->connectedScroll[scrollPos]->rect.getSize().y
+			offset.x * page->getMaxSize().x / page->connectedScroll[scrollPos]->rect.getSize().x,
+			offset.y * page->getMaxSize().y / page->connectedScroll[scrollPos]->rect.getSize().y
 			});
 	});
 }
@@ -161,14 +245,20 @@ void gui::Page::moveActiveRegion(const sf::Vector2f& offset)
 	limitActiveRegion();
 }
 
-void gui::Page::setSize(const sf::Vector2f& size)
+void gui::Page::setMaxSize(const sf::Vector2f& size)
 {
 	maxSize = size;
 }
 
-sf::Vector2f gui::Page::getSize() const
+sf::Vector2f gui::Page::getMaxSize() const
 {
 	return maxSize;
+}
+
+
+sf::Vector2f gui::Page::getSize() const
+{
+	return { activeRegion.width, activeRegion.height };
 }
 
 void gui::Page::setPosition(float x, float y)
@@ -208,28 +298,33 @@ bool gui::Page::contains(const sf::Vector2f& mousePos)
 
 gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 {
+	Entity* entity = nullptr;
+
+	if (header.isActive()) {
+		entity = header.isHit(mousePos - activePos);
+		if (entity != nullptr)return entity;
+
+		entity = collapse.isHit(mousePos - activePos);
+		if (entity != nullptr)return entity;
+	}
+
+
 	if (isActive()) {
 		sf::Vector2f mPos = mousePos - activePos;
 		if (mPos.x < 0 || mPos.x >= activeRegion.width || mPos.y < 0 || mPos.y >= activeRegion.height)return nullptr;
-
 		mPos += sf::Vector2f(activeRegion.left, activeRegion.top);
-
-		Entity* entity = nullptr;
-
-		entity = function.isHit(mousePos - (activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25)));
 
 		for (int i = 0; i < 4 && entity == nullptr; i++) {
 			if (connectedScroll[i] != nullptr)entity = connectedScroll[i]->isHit(mousePos - activePos);
 		}
 
-		for (auto it = entityMap.begin(); it != entityMap.end() && entity == nullptr; it++) {
-			entity = it->second->isHit(mPos);
+		for (auto it = allEntities.begin(); it != allEntities.end() && entity == nullptr; it++) {
+			entity = (*it)->isHit(mPos);
 		}
+		
+		
 
 		if (entity == nullptr && contains(mousePos))entity = this;
-
-		if (entity == nullptr)
-			function.setInactive();
 
 		return entity;
 	}
@@ -239,17 +334,30 @@ gui::Entity* gui::Page::isHit(const sf::Vector2f& mousePos)
 void gui::Page::activateSelection()
 {
 	isSelected = true;
-	function.setActive();
 }
 
 void gui::Page::deactivateSelection()
 {
 	isSelected = false;
-	if(!function.contains(getFrame()->getMousePosition() - (activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25))))
-		function.setInactive();
 }
 
-void gui::Page::draw(sf::RenderTarget& target)
+bool gui::Page::pollEvents(sf::Event e)
+{
+	if (e.type == sf::Event::MouseWheelScrolled) {
+		if (e.mouseWheelScroll.wheel == sf::Mouse::HorizontalWheel) {
+			this->scrollBy(Scroll::ScrollPosition::TOP, sf::Vector2f(-5 * e.mouseWheelScroll.delta, 0));
+			this->scrollBy(Scroll::ScrollPosition::BOTTOM, sf::Vector2f(-5 * e.mouseWheelScroll.delta, 0));
+		}
+		else {
+			this->scrollBy(Scroll::ScrollPosition::LEFT, sf::Vector2f(0, -5 * e.mouseWheelScroll.delta));
+			this->scrollBy(Scroll::ScrollPosition::RIGHT, sf::Vector2f(0, -5 * e.mouseWheelScroll.delta));
+		}
+		return true;
+	}
+	return false;
+}
+
+void gui::Page::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
 	if (isActive()) {
 		sf::Vertex v[4] = {
@@ -265,19 +373,21 @@ void gui::Page::draw(sf::RenderTarget& target)
 
 		target.draw(v, 4, sf::Quads);
 
-		sf::RenderTexture rt;
-		rt.create(activeRegion.width, activeRegion.height);
-		rt.clear(sf::Color::Transparent);
+		if (maxSize.x && maxSize.y) {
+			sf::RenderTexture rt;
+			rt.create(maxSize.x, maxSize.y);
+			rt.clear(sf::Color::Transparent);
 
-		for (auto it = entityMap.begin(); it != entityMap.end(); it++) {
-			it->second->draw(rt);
+			for (auto it = allEntities.begin(); it != allEntities.end(); it++) {
+				(*it)->draw(rt);
+			}
+			rt.display();
+			sf::Sprite s;
+			s.setTexture(rt.getTexture());
+			s.setTextureRect(sf::IntRect(activeRegion));
+			s.setPosition(activePos);
+			target.draw(s);
 		}
-		rt.display();
-		sf::Sprite s;
-		s.setTexture(rt.getTexture());
-		s.setTextureRect(sf::IntRect(activeRegion));
-		s.setPosition(activePos);
-		target.draw(s);
 		
 		for (int i = 0; i < 4; i++) {
 			if (connectedScroll[i] == nullptr)continue;
@@ -285,9 +395,15 @@ void gui::Page::draw(sf::RenderTarget& target)
 			connectedScroll[i]->draw(target);
 			connectedScroll[i]->move(-activePos);
 		}
+	}
 
-		function.move(activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25,25));
-		function.draw(target);
-		function.move(-(activePos + sf::Vector2f(activeRegion.width, activeRegion.height) - sf::Vector2f(25, 25)));
+	if (header.isActive()) {
+		header.move(activePos);
+		header.draw(target);
+		header.move(-activePos);
+
+		collapse.move(activePos);
+		collapse.draw(target);
+		collapse.move(-activePos);
 	}
 }

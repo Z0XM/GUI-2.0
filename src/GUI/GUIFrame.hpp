@@ -4,6 +4,15 @@
 #include <string>
 #include <map>
 #include <functional>
+#include <vector>
+
+constexpr int __GUI_ID_TEXTBOX =    1;
+constexpr int __GUI_ID_BUTTON =     2;
+constexpr int __GUI_ID_TEXTBUTTON = 3;
+constexpr int __GUI_ID_SLIDER =     4;
+constexpr int __GUI_ID_SCROLL =     5;
+constexpr int __GUI_ID_DROPDOWN =   6;
+constexpr int __GUI_ID_PAGE =       7;
 
 namespace gui {
 	class Frame;
@@ -13,35 +22,37 @@ namespace gui {
 		Frame* currFrame;
 
 		bool active;
-	protected:
 		static unsigned int item_count;
+	protected:
 		bool isSelected;
-
 		std::function<void()> action;
+		std::vector<Entity*> varRegister;
+
+		void registerVar(Entity* entity);
 	public:
 		Entity(unsigned int class_id);
 		virtual ~Entity();
 
 		unsigned int getID() const;
 
-		const Frame* getFrame() const;
+		Frame* getFrame() const;
 
 		virtual Entity* isHit(const sf::Vector2f& mousePos) = 0;
 
-		virtual void draw(sf::RenderTarget& target) = 0;
+		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates::Default) const = 0;
 
 		virtual void activateSelection() = 0;
 		virtual void deactivateSelection() = 0;
 
 		void setActive();
 		void setInactive();
-		bool isActive();
+		bool isActive() const;
 
 		void callAction() const;
 		bool hasAction() const;
 		void setAction(std::function<void()> func);
 
-		enum class ActionEvent{NONE, RELEASE, PRESS, MOVE } actionEvent;
+		enum class ActionEvent{NONE, RELEASE, PRESS, MOUSEHELD } actionEvent;
 
 		friend void setEntityFrame(Entity& entity, Frame* frame);
 	};
@@ -53,7 +64,8 @@ namespace gui {
 
 		sf::RenderWindow* window;
 
-		Entity* mouseHoveringOn, *clicked;		
+		Entity* mouseHoveringOn, *clicked;
+		sf::Vector2f lastMousePos;
 	public:
 		Frame();
 		~Frame();
@@ -62,6 +74,7 @@ namespace gui {
 
 		void addEntity(Entity& entity);
 		void removeEntity(Entity& entity);
+		void removeEntity(unsigned int id);
 		static void setName(const Entity& entity, const std::string& name);
 		static void removeName(const std::string& name);
 		
@@ -70,8 +83,10 @@ namespace gui {
 		static unsigned int getIDByName(const std::string& name);
 		static std::string getName(unsigned int id);
 
+		sf::Vector2f getLastMouseOffset() const;
+
 		void update();
-		void pollEvents(sf::Event event);
+		bool pollEvents(sf::Event event);
 		void draw();
 
 		sf::Vector2f getMousePosition() const;

@@ -2,14 +2,14 @@
 
 namespace gui {
 	Textbox::Textbox(const sf::Vector2f size, int class_id)
-		: Entity(class_id), hasText(true), alignment(TextAlign::CENTER)
+		: Entity(class_id), alignment(TextAlign::CENTER)
 	{
 		this->setSize(size);
 		action = nullptr;
 		actionEvent = ActionEvent::NONE;
 	}
 	Textbox::Textbox(const sf::Vector2f& size)
-		:Entity(5), hasText(true), alignment(TextAlign::CENTER)
+		:Entity(__GUI_ID_TEXTBOX), alignment(TextAlign::CENTER)
 	{
 		this->setSize(size);
 		action = nullptr;
@@ -25,23 +25,21 @@ namespace gui {
 	{
 		box = textbox.box;
 		text = textbox.text;
-		hasText = textbox.hasText;
 		alignment = textbox.alignment;
 	}
 
 	void Textbox::updateText()
 	{
-		if (hasText) {
-			text.setPosition(
-				box.getPosition().x + (box.getSize().x - text.getGlobalBounds().width) * 0.5f * (int)alignment,
-				box.getPosition().y + box.getSize().y * 0.5f - text.getGlobalBounds().height
-			);
-		}
+		text.setPosition(
+			box.getPosition().x + (box.getSize().x - text.getGlobalBounds().width) * 0.5f * (int)alignment,
+			box.getPosition().y + box.getSize().y * 0.5f - text.getGlobalBounds().height
+		);
 	}
 
 	void Textbox::setSize(const sf::Vector2f& size)
 	{
 		box.setSize(size);
+		updateText();
 	}
 
 	const sf::Vector2f& Textbox::getSize() const
@@ -205,15 +203,11 @@ namespace gui {
 		text.setStyle(style);
 	}
 
-	void Textbox::setText(bool hasText)
-	{
-		this->hasText = hasText;
-	}
 	Entity* Textbox::isHit(const sf::Vector2f& mousePos)
 	{
 		return nullptr;
 	}
-	void Textbox::draw(sf::RenderTarget& target)
+	void Textbox::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
 		if (isActive()) {
 			target.draw(box);

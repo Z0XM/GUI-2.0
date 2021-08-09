@@ -1,29 +1,34 @@
 #pragma once
-
 #include "GUIFrame.hpp"
-#include "Textbox.hpp"
 
-namespace gui {
-	class Button : public Textbox {
+
+namespace gui
+{
+	class Button : public Entity, public sf::ConvexShape {
 	public:
-		Button(const sf::Vector2f& size = sf::Vector2f(0, 0));
+		Button();
 		~Button();
 
-		void copy(const Button& button);
+		void copy(Button& button);
 
 		void setHighlightFillColor(const sf::Color& color);
 		void setHighlightOutlineColor(const sf::Color& color);
 		void setHighlightOutlineThickness(float thickness);
 
-		void setFillColor(const sf::Color& color);
-		void setOutlineColor(const sf::Color& color);
-		void setOutlineThickness(float thickness);
+		void setOriginalFillColor(const sf::Color& color);
+		void setOriginalOutlineColor(const sf::Color& color);
+		void setOriginalOutlineThickness(float thickness);
+
+		sf::Vector2f getSize() const;
 
 		bool contains(const sf::Vector2f& mousePos) const;
+
 		Entity* isHit(const sf::Vector2f& mousePos);
 
-		void activateSelection() override;
-		void deactivateSelection() override;
+		void activateSelection();
+		void deactivateSelection();
+
+		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates::Default) const;
 
 	private:
 		struct {

@@ -39,6 +39,6 @@ namespace gui {
 		void activateSelection() override;
 		void deactivateSelection() override;
 		
-		void draw(sf::RenderTarget& target) override;
+		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates::Default) const;
 	};
 }

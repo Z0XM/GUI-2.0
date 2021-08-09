@@ -3,6 +3,7 @@
 #include "Button.hpp"
 #include "Slider.hpp"
 #include "GUIFrame.hpp"
+#include <vector>
 
 namespace gui {
 	class Scroll;
@@ -12,21 +13,23 @@ namespace gui {
 		sf::Vector2f maxSize;
 		sf::FloatRect activeRegion;
 
-		std::map<unsigned int, Entity*> entityMap;
+		std::vector<Entity*> allEntities;
 
 		Scroll* connectedScroll[4];
 
 		sf::Color fillColor, outlineColor;
 
-		gui::Button function;
+		mutable Button header, collapse;
 
-		void limitActiveRegion();
+	protected:
+		virtual void limitActiveRegion();
 	public:
 		Page(const sf::Vector2f& size = sf::Vector2f(0, 0));
-		~Page();
+		virtual ~Page();
 
 		void addEntity(Entity& entity);
 		void removeEntity(const Entity& entity);
+		void removeEntity(unsigned int id);
 		void setName(const Entity& entity, const std::string& name);
 
 		Entity* getByID(unsigned int id) const;
@@ -36,7 +39,7 @@ namespace gui {
 		sf::Vector2f getMousePosition() const;
 
 		void setFillColor(sf::Color color);
-		void setOutineColor(sf::Color color);
+		void setOutlineColor(sf::Color color);
 
 		void setScroll(int scrollPos);
 		void removeScroll(int scrollPos);
@@ -46,7 +49,9 @@ namespace gui {
 		void moveActiveRegion(float offsetX, float offsetY);
 		void moveActiveRegion(const sf::Vector2f& offset);
 
-		void setSize(const sf::Vector2f& size);
+		void setMaxSize(const sf::Vector2f& size);
+		sf::Vector2f getMaxSize() const;
+
 		sf::Vector2f getSize() const;
 
 		void setPosition(float x, float y);
@@ -56,15 +61,20 @@ namespace gui {
 		void move(float offsetX, float offsetY);
 		void move(const sf::Vector2f& offset);
 
+		void scrollBy(int scrollPos, const sf::Vector2f& offset);
+
+		void setHeader(bool hasHeader, bool isMovable = true, bool isMinimisable = true);
+
 		bool contains(const sf::Vector2f& mousePos);
-		Entity* isHit(const sf::Vector2f& mousePos);
+		virtual Entity* isHit(const sf::Vector2f& mousePos);
 
 		virtual void activateSelection() override;
 		virtual void deactivateSelection() override;
 
 		void setAction(std::function<void()> func) = delete;
 
-		void draw(sf::RenderTarget&);
+		bool pollEvents(sf::Event event);
+		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates::Default) const;
 
 		friend void setScrollAction(Page* page, int scrollPos);
 	};

@@ -11,10 +11,12 @@ private:
 	gui::Frame frame;
 	sf::Font font;
 
-	gui::Button button, button2, button3;
+	gui::Button rectB;
+	gui::TextButton button, button2, button3, dbutton1, dbutton2, dbutton3, dbutton4, dbutton5, dbutton6;
 	gui::Page page;
 	gui::Slider slider;
 	gui::Textbox text;
+	gui::Dropdown drop;
 
 	void initWindow();
 public:
